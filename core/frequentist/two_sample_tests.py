@@ -46,6 +46,25 @@ def welch_t_test(
     Use when: continuous outcomes, no assumption of equal variance.
     Standard for most A/B tests on continuous metrics.
     """
+    # NEW: Input validation. Fail loudly on undefined inputs rather than
+    # silently returning NaN. NaN propagation through statistical pipelines
+    # is the worst kind of bug because the user never sees an error.
+    control = np.asarray(control, dtype=float)
+    treatment = np.asarray(treatment, dtype=float)
+
+    if control.size < 2 or treatment.size < 2:
+        raise ValueError(
+            f"Welch's t-test requires at least 2 observations per group "
+            f"(got control={control.size}, treatment={treatment.size}). "
+            f"Variance is undefined with fewer samples."
+        )
+
+    if np.any(np.isnan(control)) or np.any(np.isnan(treatment)):
+        raise ValueError(
+            "Input contains NaN values. Handle missing data before "
+            "calling welch_t_test (drop, impute, or analyze separately)."
+        )
+
     t_stat, p_val = stats.ttest_ind(treatment, control, equal_var=False)
     
     mean_diff = treatment.mean() - control.mean()
@@ -97,6 +116,17 @@ def two_proportion_test(
     Use when: binary outcomes (conversion rate, click-through rate).
     Standard for most A/B tests on conversion metrics.
     """
+    # NEW: Input validation
+    if control_total <= 0 or treatment_total <= 0:
+        raise ValueError(
+            f"Sample sizes must be positive (got control_total={control_total}, "
+            f"treatment_total={treatment_total})."
+        )
+    if control_successes < 0 or treatment_successes < 0:
+        raise ValueError("Successes must be non-negative.")
+    if control_successes > control_total or treatment_successes > treatment_total:
+        raise ValueError("Successes cannot exceed total trials.")
+
     p_control = control_successes / control_total
     p_treatment = treatment_successes / treatment_total
     
