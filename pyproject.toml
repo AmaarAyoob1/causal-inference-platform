@@ -19,8 +19,16 @@ dependencies = [
     "statsmodels>=0.14.6",
     "streamlit>=1.57.0",
 ]
-
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
 ]
+
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["core*", "app*"]
+exclude = ["data*", "notebooks*", "tests*", "docs*"]
+
